@@ -48,7 +48,10 @@ export function createReconnectController(
       try {
         await callback()
       } catch (error) {
-        console.error('[WINS Baileys] Reconnect gagal:', error)
+        console.error(
+          '[WINS Baileys] Reconnect gagal:',
+          error
+        )
       }
     }, delay)
 
