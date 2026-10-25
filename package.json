@@ -51,6 +51,7 @@
     "pino": "^9.6",
     "protobufjs": "^7.5.6",
     "whatsapp-rust-bridge": "0.5.4",
+    "wins-baileys": "^7.0.0-wins.1",
     "ws": "^8.13.0"
   },
   "devDependencies": {
