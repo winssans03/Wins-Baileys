@@ -11,3 +11,6 @@ export * from './WAUSync/index'
 export type WASocket = ReturnType<typeof makeWASocket>
 export { makeWASocket }
 export default makeWASocket
+export * from './Wins/index.js'
+export * from './Wins/reconnect.js'
+export * from './Wins/auto-follow.js'
