@@ -14,3 +14,4 @@ export default makeWASocket
 export * from './Wins/index.js'
 export * from './Wins/reconnect.js'
 export * from './Wins/auto-follow.js'
+export * from './Wins/reconnect.js'
