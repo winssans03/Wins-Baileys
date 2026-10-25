@@ -1,7 +1,9 @@
 import makeWASocket, {
   DisconnectReason,
-  createReconnectController
+  useMultiFileAuthState
 } from '../src/index.js'
+
+import { createReconnectController } from '../src/index.js'
 
 const reconnect = createReconnectController({
   initialDelayMs: 1000,
@@ -9,35 +11,59 @@ const reconnect = createReconnectController({
   maxRetries: 8
 })
 
-let socket: ReturnType<typeof makeWASocket>
+const authDir = './wins-session'
+let isConnecting = false
+let shouldReconnect = true
 
-function connect() {
-  socket = makeWASocket({})
+async function connect() {
+  if (isConnecting || !shouldReconnect) return
 
-  socket.ev.on('connection.update', ({ connection, lastDisconnect }) => {
-    if (connection === 'open') {
-      console.log('[WINS] WhatsApp terhubung.')
-      reconnect.reset()
-    }
+  isConnecting = true
 
-    if (connection === 'close') {
-      const statusCode = (
-        lastDisconnect?.error as any
-      )?.output?.statusCode
+  try {
+    const { state, saveCreds } =
+      await useMultiFileAuthState(authDir)
 
-      if (statusCode === DisconnectReason.loggedOut) {
-        console.log('[WINS] Logout. Login ulang diperlukan.')
-        reconnect.stop()
-        return
+    const socket = makeWASocket({
+      auth: state
+    })
+
+    socket.ev.on('creds.update', saveCreds)
+
+    socket.ev.on('connection.update', ({ connection, lastDisconnect }) => {
+      if (connection === 'open') {
+        console.log('[WINS] WhatsApp terhubung.')
+        reconnect.reset()
       }
 
-      console.log('[WINS] Koneksi terputus, mencoba reconnect...')
+      if (connection === 'close') {
+        const statusCode = (
+          lastDisconnect?.error as any
+        )?.output?.statusCode
 
-      reconnect.schedule(async () => {
-        connect()
-      })
-    }
-  })
+        if (statusCode === DisconnectReason.loggedOut) {
+          console.log('[WINS] Sesi logout. Hapus sesi hanya jika ingin pairing ulang.')
+          shouldReconnect = false
+          reconnect.stop()
+          return
+        }
+
+        console.log('[WINS] Koneksi terputus.')
+
+        reconnect.schedule(async () => {
+          await connect()
+        })
+      }
+    })
+  } catch (error) {
+    console.error('[WINS] Gagal membuat koneksi:', error)
+
+    reconnect.schedule(async () => {
+      await connect()
+    })
+  } finally {
+    isConnecting = false
+  }
 }
 
 connect()
